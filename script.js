@@ -9,12 +9,15 @@ async function fetchComments(projectId) {
   return data.comments;
 }
 
-function createAvatarElement(username) {
+function createAvatarElement(username, index) {
   const avatar = document.createElement('img');
   avatar.className = 'floating-avatar';
   avatar.src = `https://images.websim.ai/avatar/${username}`;
   avatar.alt = username;
   avatar.title = `@${username}`;
+  
+  // Add animation delay based on index
+  avatar.style.animationDelay = `${index * 0.1}s`;
   
   const link = document.createElement('a');
   link.href = `https://websim.ai/@${username}`;
@@ -46,9 +49,9 @@ async function updateCommenters(projectId, avatarSpace) {
   );
   
   // Add only new commenters that aren't already displayed
-  uniqueCommenters.forEach(author => {
+  uniqueCommenters.forEach((author, index) => {
     if (!currentUsernames.includes(author.username)) {
-      const avatarLink = createAvatarElement(author.username);
+      const avatarLink = createAvatarElement(author.username, index);
       avatarSpace.appendChild(avatarLink);
     }
   });
