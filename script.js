@@ -3,8 +3,42 @@ async function getCurrentProject() {
   return project.id;
 }
 
-async function fetchComments(projectId) {
-  const response = await fetch(`/api/v1/projects/${projectId}/comments`);
+async function fetchAllComments(projectId) {
+  let allComments = [];
+  let cursor = null;
+  
+  // Keep fetching until we have all comments
+  while (true) {
+    const url = new URL(`/api/v1/projects/${projectId}/comments`);
+    if (cursor) {
+      url.searchParams.set('after', cursor);
+    }
+    url.searchParams.set('first', 100); // Max page size
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    // Add comments from this page
+    allComments = [...allComments, ...data.comments.data];
+    
+    // If there's no next page, we're done
+    if (!data.comments.meta.has_next_page) {
+      break;
+    }
+    
+    // Get cursor for next page
+    cursor = data.comments.meta.end_cursor;
+  }
+  
+  return allComments;
+}
+
+async function fetchNewComments(projectId, after) {
+  const url = new URL(`/api/v1/projects/${projectId}/comments`);
+  url.searchParams.set('after', after);
+  url.searchParams.set('first', 100);
+  
+  const response = await fetch(url);
   const data = await response.json();
   return data.comments;
 }
@@ -26,13 +60,23 @@ function createAvatarElement(username, index) {
   return link;
 }
 
-async function updateCommenters(projectId, avatarSpace) {
-  const comments = await fetchComments(projectId);
+let lastCursor = null;
+
+async function updateCommenters(projectId, avatarSpace, isInitialLoad = false) {
+  // On initial load, get ALL comments
+  const comments = isInitialLoad ? 
+    await fetchAllComments(projectId) : 
+    await fetchNewComments(projectId, lastCursor);
+  
+  if (!isInitialLoad && comments.data && comments.data.length > 0) {
+    lastCursor = comments.meta.end_cursor;
+  }
   
   // Sort comments by creation date (oldest first)
-  const sortedComments = comments.data.sort((a, b) => 
-    new Date(a.comment.created_at) - new Date(b.comment.created_at)
-  );
+  const sortedComments = (isInitialLoad ? comments : comments.data)
+    .sort((a, b) => 
+      new Date(a.comment.created_at) - new Date(b.comment.created_at)
+    );
   
   // Create array of unique commenters (keeping first occurrence/oldest comment)
   const uniqueCommenters = Array.from(
@@ -147,12 +191,18 @@ async function init() {
       // Initialize audio
       setupAudio();
       
-      // Initial load
-      await updateCommenters(projectId, avatarSpace);
+      // Initial load - get ALL comments
+      await updateCommenters(projectId, avatarSpace, true);
+      
+      // Set the last cursor after initial load
+      const initialComments = await fetchNewComments(projectId, null);
+      if (initialComments.data && initialComments.data.length > 0) {
+        lastCursor = initialComments.meta.end_cursor;
+      }
       
       // Poll for new comments every 3 seconds
       setInterval(() => {
-        updateCommenters(projectId, avatarSpace);
+        updateCommenters(projectId, avatarSpace, false);
       }, 3000);
     }
     
