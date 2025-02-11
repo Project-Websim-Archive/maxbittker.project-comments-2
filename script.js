@@ -3,46 +3,27 @@ async function getCurrentProject() {
   return project.id;
 }
 
-async function fetchAllComments(projectId) {
-  let allComments = [];
-  let cursor = null;
+async function fetchCommentPage(projectId, cursor = null) {
+  const params = new URLSearchParams();
+  if (cursor) params.set('after', cursor);
+  params.set('first', '100');
   
-  // Keep fetching until we have all comments
-  while (true) {
-    const url = new URL(`/api/v1/projects/${projectId}/comments`);
-    if (cursor) {
-      url.searchParams.set('after', cursor);
-    }
-    url.searchParams.set('first', 100); // Max page size
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    // Add comments from this page
-    allComments = [...allComments, ...data.comments.data];
-    
-    // If there's no next page, we're done
-    if (!data.comments.meta.has_next_page) {
-      break;
-    }
-    
-    // Get cursor for next page
-    cursor = data.comments.meta.end_cursor;
-  }
-  
-  return allComments;
-}
-
-async function fetchNewComments(projectId, after) {
-  const url = new URL(`/api/v1/projects/${projectId}/comments`);
-  if (after) {
-    url.searchParams.set('after', after);
-  }
-  url.searchParams.set('first', 100);
-  
-  const response = await fetch(url);
+  const response = await fetch(`/api/v1/projects/${projectId}/comments?${params}`);
   const data = await response.json();
   return data.comments;
+}
+
+async function* commentPaginator(projectId) {
+  let hasNextPage = true;
+  let cursor = null;
+  
+  while (hasNextPage) {
+    const page = await fetchCommentPage(projectId, cursor);
+    yield page.data;
+    
+    hasNextPage = page.meta.has_next_page;
+    cursor = page.meta.end_cursor;
+  }
 }
 
 function createAvatarElement(username, index) {
@@ -62,48 +43,49 @@ function createAvatarElement(username, index) {
   return link;
 }
 
-let lastCursor = null;
-
-async function updateCommenters(projectId, avatarSpace, isInitialLoad = false) {
-  try {
-    // On initial load, get ALL comments
-    const comments = isInitialLoad ? 
-      await fetchAllComments(projectId) : 
-      await fetchNewComments(projectId, lastCursor);
-    
-    if (!isInitialLoad && comments.data && comments.data.length > 0) {
-      lastCursor = comments.meta.end_cursor;
-    }
-    
+async function loadInitialCommenters(projectId, avatarSpace) {
+  // Track unique commenters we've already added
+  const addedUsernames = new Set();
+  let currentIndex = 0;
+  
+  for await (const comments of commentPaginator(projectId)) {
     // Sort comments by creation date (oldest first)
-    const sortedComments = (isInitialLoad ? comments : comments.data)
-      .sort((a, b) => 
-        new Date(a.comment.created_at) - new Date(b.comment.created_at)
-      );
-    
-    // Create array of unique commenters (keeping first occurrence/oldest comment)
-    const uniqueCommenters = Array.from(
-      new Map(
-        sortedComments
-          .filter(({comment}) => comment.author && comment.author.username)
-          .map(({comment}) => [comment.author.username, comment.author])
-      ).values()
+    const sortedComments = comments.sort((a, b) => 
+      new Date(a.comment.created_at) - new Date(b.comment.created_at)
     );
     
-    // Get current usernames displayed
-    const currentUsernames = Array.from(avatarSpace.children).map(link => 
-      link.querySelector('img').alt
-    );
-    
-    // Add only new commenters that aren't already displayed
-    uniqueCommenters.forEach((author, index) => {
-      if (!currentUsernames.includes(author.username)) {
-        const avatarLink = createAvatarElement(author.username, index);
+    // Add new unique commenters
+    for (const {comment} of sortedComments) {
+      if (comment.author && comment.author.username && !addedUsernames.has(comment.author.username)) {
+        addedUsernames.add(comment.author.username);
+        const avatarLink = createAvatarElement(comment.author.username, currentIndex++);
         avatarSpace.appendChild(avatarLink);
+        
+        // Small delay to make the appearance smoother
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-    });
-  } catch (error) {
-    console.error('Error updating commenters:', error);
+    }
+  }
+}
+
+async function updateCommenters(projectId, avatarSpace) {
+  const comments = await fetchCommentPage(projectId);
+  
+  // Get current usernames displayed
+  const currentUsernames = new Set(
+    Array.from(avatarSpace.children).map(link => 
+      link.querySelector('img').alt
+    )
+  );
+  
+  // Add only new commenters
+  const currentIndex = currentUsernames.size;
+  for (const {comment} of comments.data) {
+    if (comment.author && comment.author.username && !currentUsernames.has(comment.author.username)) {
+      currentUsernames.add(comment.author.username);
+      const avatarLink = createAvatarElement(comment.author.username, currentIndex + currentUsernames.size);
+      avatarSpace.appendChild(avatarLink);
+    }
   }
 }
 
@@ -197,22 +179,17 @@ async function init() {
       // Initialize audio
       setupAudio();
       
-      // Initial load - get ALL comments
-      await updateCommenters(projectId, avatarSpace, true);
-      
-      // Get initial cursor for polling
-      const initialComments = await fetchNewComments(projectId);
-      if (initialComments.data && initialComments.data.length > 0) {
-        lastCursor = initialComments.meta.end_cursor;
-      }
+      // Initial load - paginate through all results
+      await loadInitialCommenters(projectId, avatarSpace);
       
       // Poll for new comments every 3 seconds
-      setInterval(async () => {
-        await updateCommenters(projectId, avatarSpace, false);
+      setInterval(() => {
+        updateCommenters(projectId, avatarSpace);
       }, 3000);
     }
+    
   } catch (error) {
-    console.error('Error in init:', error);
+    console.error('Error:', error);
   }
 }
 
