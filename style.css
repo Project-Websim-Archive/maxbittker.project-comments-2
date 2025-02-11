@@ -17,7 +17,7 @@ body {
 
 .cta {
   text-align: center;
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   font-family: 'Lemon Days', system-ui;
   color: #1a73e8;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
@@ -49,6 +49,27 @@ body {
   transform: scale(1.2);
   z-index: 100;
   animation-play-state: paused;
+}
+
+/* Thumbnail mode styles */
+.thumbnail-mode .avatar-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.thumbnail-mode .floating-avatar {
+  position: absolute;
+}
+
+.thumbnail-mode .cta {
+  font-size: 5rem;
+  position: relative;
+  z-index: 10;
 }
 
 .controls {
