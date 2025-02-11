@@ -17,7 +17,7 @@ function createAvatarElement(username, index) {
   avatar.title = `@${username}`;
   
   // Add animation delay based on index
-  avatar.style.animationDelay = `${index * 0.1}s`;
+  avatar.style.animationDelay = `${index * 0.3}s`;
   
   const link = document.createElement('a');
   link.href = `https://websim.ai/@${username}`;
@@ -57,10 +57,54 @@ async function updateCommenters(projectId, avatarSpace) {
   });
 }
 
+function setupAudio() {
+  const music = document.getElementById('background-music');
+  const muteButton = document.getElementById('mute-button');
+  const startButton = document.getElementById('start-button');
+  let isPlaying = false;
+
+  startButton.addEventListener('click', () => {
+    if (!isPlaying) {
+      music.play();
+      isPlaying = true;
+      startButton.textContent = 'Playing...';
+      startButton.disabled = true;
+    }
+  });
+
+  muteButton.addEventListener('click', () => {
+    if (music.muted) {
+      music.muted = false;
+      muteButton.textContent = '🔊';
+    } else {
+      music.muted = true;
+      muteButton.textContent = '🔇';
+    }
+  });
+
+  // Click anywhere to play
+  document.addEventListener('click', () => {
+    if (!isPlaying) {
+      music.play();
+      isPlaying = true;
+      startButton.textContent = 'Playing...';
+      startButton.disabled = true;
+    }
+  });
+
+  // Handle audio loaded
+  music.addEventListener('canplaythrough', () => {
+    startButton.disabled = false;
+  });
+}
+
 async function init() {
   try {
     const projectId = await getCurrentProject();
     const avatarSpace = document.getElementById('avatar-space');
+    
+    // Initialize audio
+    setupAudio();
     
     // Initial load
     await updateCommenters(projectId, avatarSpace);
