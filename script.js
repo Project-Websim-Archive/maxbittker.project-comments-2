@@ -25,7 +25,6 @@ function createAvatarElement(username) {
 
 async function updateCommenters(projectId, avatarSpace) {
   const comments = await fetchComments(projectId);
-  avatarSpace.innerHTML = ''; // Clear existing avatars
   
   // Sort comments by creation date (oldest first)
   const sortedComments = comments.data.sort((a, b) => 
@@ -41,10 +40,17 @@ async function updateCommenters(projectId, avatarSpace) {
     ).values()
   );
   
-  // Add commenters in order
+  // Get current usernames displayed
+  const currentUsernames = Array.from(avatarSpace.children).map(link => 
+    link.querySelector('img').alt
+  );
+  
+  // Add only new commenters that aren't already displayed
   uniqueCommenters.forEach(author => {
-    const avatarLink = createAvatarElement(author.username);
-    avatarSpace.appendChild(avatarLink);
+    if (!currentUsernames.includes(author.username)) {
+      const avatarLink = createAvatarElement(author.username);
+      avatarSpace.appendChild(avatarLink);
+    }
   });
 }
 
