@@ -3,47 +3,51 @@ body {
   margin: 0;
   padding: 20px;
   line-height: 1.5;
+  background: #f0f2f5;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
-.comment {
-  margin-bottom: 20px;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.username {
+.cta {
+  text-align: center;
+  font-size: 2.5rem;
   color: #1a73e8;
-  text-decoration: none;
-  font-weight: 500;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+  margin: 2rem auto;
+  max-width: 800px;
+  line-height: 1.2;
 }
 
-.username:hover {
-  text-decoration: underline;
+.avatar-container {
+  position: relative;
+  height: calc(100vh - 200px);
+  width: 100%;
+  overflow: hidden;
 }
 
-.timestamp {
-  color: #666;
-  margin-left: 10px;
+.floating-avatar {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
 }
 
-.comment-content {
-  color: #333;
+.floating-avatar:hover {
+  transform: scale(1.2);
+  z-index: 100;
 }
 
-.replies {
-  margin-left: 40px;
+@keyframes float {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(var(--x-drift), var(--y-drift)) rotate(var(--rotation));
+  }
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
 }

@@ -9,6 +9,43 @@ async function fetchComments(projectId) {
   return data.comments;
 }
 
+function getRandomFloat(min, max) {
+  return Math.random() * (max - min) + min;
+}
+
+function createFloatingAvatar(username, index, total) {
+  const avatar = document.createElement('img');
+  avatar.className = 'floating-avatar';
+  avatar.src = `https://images.websim.ai/avatar/${username}`;
+  avatar.alt = username;
+  avatar.title = `@${username}`;
+  
+  // Make it a link
+  const link = document.createElement('a');
+  link.href = `https://websim.ai/@${username}`;
+  link.appendChild(avatar);
+  
+  // Random starting position
+  link.style.left = `${getRandomFloat(10, 90)}%`;
+  link.style.top = `${getRandomFloat(10, 90)}%`;
+  
+  // Set random drift properties
+  const xDrift = getRandomFloat(-200, 200);
+  const yDrift = getRandomFloat(-200, 200);
+  const rotation = getRandomFloat(-45, 45);
+  const duration = getRandomFloat(15, 25);
+  
+  link.style.setProperty('--x-drift', `${xDrift}px`);
+  link.style.setProperty('--y-drift', `${yDrift}px`);
+  link.style.setProperty('--rotation', `${rotation}deg`);
+  
+  link.style.animation = `float ${duration}s infinite ease-in-out`;
+  // Add slight delay to each avatar's animation
+  link.style.animationDelay = `${(index * 1.5) % 5}s`;
+  
+  return link;
+}
+
 function formatTimestamp(timestamp) {
   return new Date(timestamp).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -77,14 +114,26 @@ async function init() {
     const projectId = await getProject();
     const comments = await fetchComments(projectId);
     
-    const commentsContainer = document.getElementById('comments');
+    const avatarSpace = document.getElementById('avatar-space');
     
+    // Get unique commenters
+    const uniqueCommenters = new Set();
     comments.data.forEach(({comment}) => {
-      if (!comment.parent_comment_id) { // Only show top-level comments initially
-        const commentElement = createCommentElement(comment);
-        commentsContainer.appendChild(commentElement);
+      if (comment.author && comment.author.username) {
+        uniqueCommenters.add(comment.author.username);
       }
     });
+    
+    // Create floating avatars for each unique commenter
+    Array.from(uniqueCommenters).forEach((username, index) => {
+      const floatingAvatar = createFloatingAvatar(
+        username,
+        index,
+        uniqueCommenters.size
+      );
+      avatarSpace.appendChild(floatingAvatar);
+    });
+    
   } catch (error) {
     console.error('Error fetching comments:', error);
   }
