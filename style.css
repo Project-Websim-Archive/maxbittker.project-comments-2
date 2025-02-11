@@ -24,35 +24,25 @@ body {
 }
 
 .avatar-container {
-  position: relative;
-  height: calc(100vh - 200px);
-  width: 100%;
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 2rem;
+  overflow-x: auto;
+  height: 80px;
+  gap: 1rem;
 }
 
 .floating-avatar {
-  position: absolute;
   width: 48px;
   height: 48px;
   border-radius: 50%;
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   cursor: pointer;
   transition: transform 0.3s ease;
+  flex-shrink: 0;
 }
 
 .floating-avatar:hover {
   transform: scale(1.2);
   z-index: 100;
-}
-
-@keyframes float {
-  0% {
-    transform: translate(0, 0) rotate(0deg);
-  }
-  50% {
-    transform: translate(var(--x-drift), var(--y-drift)) rotate(var(--rotation));
-  }
-  100% {
-    transform: translate(0, 0) rotate(0deg);
-  }
 }
