@@ -28,9 +28,10 @@ body {
 .avatar-container {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   padding: 2rem;
-  overflow-x: auto;
-  height: 80px;
+  overflow-y: auto;
+  max-height: calc(100vh - 300px);
   gap: 1rem;
 }
 
