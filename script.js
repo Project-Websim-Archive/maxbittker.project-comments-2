@@ -1,4 +1,4 @@
-async function getProject() {
+async function getCurrentProject() {
   const project = await window.websim.getProject();
   return project.id;
 }
@@ -136,7 +136,7 @@ async function updateCommenters(projectId, avatarSpace) {
 
 async function init() {
   try {
-    const projectId = await getProject();
+    const projectId = await getCurrentProject();
     const avatarSpace = document.getElementById('avatar-space');
     
     // Initial load
