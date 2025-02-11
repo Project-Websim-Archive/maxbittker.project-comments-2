@@ -35,7 +35,9 @@ async function fetchAllComments(projectId) {
 
 async function fetchNewComments(projectId, after) {
   const url = new URL(`/api/v1/projects/${projectId}/comments`);
-  url.searchParams.set('after', after);
+  if (after) {
+    url.searchParams.set('after', after);
+  }
   url.searchParams.set('first', 100);
   
   const response = await fetch(url);
@@ -63,42 +65,46 @@ function createAvatarElement(username, index) {
 let lastCursor = null;
 
 async function updateCommenters(projectId, avatarSpace, isInitialLoad = false) {
-  // On initial load, get ALL comments
-  const comments = isInitialLoad ? 
-    await fetchAllComments(projectId) : 
-    await fetchNewComments(projectId, lastCursor);
-  
-  if (!isInitialLoad && comments.data && comments.data.length > 0) {
-    lastCursor = comments.meta.end_cursor;
-  }
-  
-  // Sort comments by creation date (oldest first)
-  const sortedComments = (isInitialLoad ? comments : comments.data)
-    .sort((a, b) => 
-      new Date(a.comment.created_at) - new Date(b.comment.created_at)
-    );
-  
-  // Create array of unique commenters (keeping first occurrence/oldest comment)
-  const uniqueCommenters = Array.from(
-    new Map(
-      sortedComments
-        .filter(({comment}) => comment.author && comment.author.username)
-        .map(({comment}) => [comment.author.username, comment.author])
-    ).values()
-  );
-  
-  // Get current usernames displayed
-  const currentUsernames = Array.from(avatarSpace.children).map(link => 
-    link.querySelector('img').alt
-  );
-  
-  // Add only new commenters that aren't already displayed
-  uniqueCommenters.forEach((author, index) => {
-    if (!currentUsernames.includes(author.username)) {
-      const avatarLink = createAvatarElement(author.username, index);
-      avatarSpace.appendChild(avatarLink);
+  try {
+    // On initial load, get ALL comments
+    const comments = isInitialLoad ? 
+      await fetchAllComments(projectId) : 
+      await fetchNewComments(projectId, lastCursor);
+    
+    if (!isInitialLoad && comments.data && comments.data.length > 0) {
+      lastCursor = comments.meta.end_cursor;
     }
-  });
+    
+    // Sort comments by creation date (oldest first)
+    const sortedComments = (isInitialLoad ? comments : comments.data)
+      .sort((a, b) => 
+        new Date(a.comment.created_at) - new Date(b.comment.created_at)
+      );
+    
+    // Create array of unique commenters (keeping first occurrence/oldest comment)
+    const uniqueCommenters = Array.from(
+      new Map(
+        sortedComments
+          .filter(({comment}) => comment.author && comment.author.username)
+          .map(({comment}) => [comment.author.username, comment.author])
+      ).values()
+    );
+    
+    // Get current usernames displayed
+    const currentUsernames = Array.from(avatarSpace.children).map(link => 
+      link.querySelector('img').alt
+    );
+    
+    // Add only new commenters that aren't already displayed
+    uniqueCommenters.forEach((author, index) => {
+      if (!currentUsernames.includes(author.username)) {
+        const avatarLink = createAvatarElement(author.username, index);
+        avatarSpace.appendChild(avatarLink);
+      }
+    });
+  } catch (error) {
+    console.error('Error updating commenters:', error);
+  }
 }
 
 function setupAudio() {
@@ -194,20 +200,19 @@ async function init() {
       // Initial load - get ALL comments
       await updateCommenters(projectId, avatarSpace, true);
       
-      // Set the last cursor after initial load
-      const initialComments = await fetchNewComments(projectId, null);
+      // Get initial cursor for polling
+      const initialComments = await fetchNewComments(projectId);
       if (initialComments.data && initialComments.data.length > 0) {
         lastCursor = initialComments.meta.end_cursor;
       }
       
       // Poll for new comments every 3 seconds
-      setInterval(() => {
-        updateCommenters(projectId, avatarSpace, false);
+      setInterval(async () => {
+        await updateCommenters(projectId, avatarSpace, false);
       }, 3000);
     }
-    
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in init:', error);
   }
 }
 
