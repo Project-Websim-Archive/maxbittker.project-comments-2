@@ -1,3 +1,8 @@
+@font-face {
+  font-family: 'Lemon Days';
+  src: url('Lemon Days.ttf') format('truetype');
+}
+
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   margin: 0;
@@ -11,10 +16,11 @@ body {
 .cta {
   text-align: center;
   font-size: 2.5rem;
+  font-family: 'Lemon Days', system-ui;
   color: #1a73e8;
   text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-  margin: 2rem auto;
-  max-width: 800px;
+  margin: 1rem auto;
+  max-width: 600px;
   line-height: 1.2;
 }
 

@@ -109,30 +109,43 @@ function createCommentElement(comment) {
   return div;
 }
 
-async function init() {
-  try {
-    const projectId = await getProject();
-    const comments = await fetchComments(projectId);
-    
-    const avatarSpace = document.getElementById('avatar-space');
-    
-    // Get unique commenters
-    const uniqueCommenters = new Set();
-    comments.data.forEach(({comment}) => {
-      if (comment.author && comment.author.username) {
-        uniqueCommenters.add(comment.author.username);
-      }
-    });
-    
-    // Create floating avatars for each unique commenter
-    Array.from(uniqueCommenters).forEach((username, index) => {
+async function updateCommenters(projectId, avatarSpace) {
+  const comments = await fetchComments(projectId);
+  const currentAvatars = new Set([...avatarSpace.children].map(link => link.querySelector('img').alt));
+  
+  // Get unique commenters
+  const uniqueCommenters = new Set();
+  comments.data.forEach(({comment}) => {
+    if (comment.author && comment.author.username) {
+      uniqueCommenters.add(comment.author.username);
+    }
+  });
+  
+  // Add new commenters
+  uniqueCommenters.forEach((username, index) => {
+    if (!currentAvatars.has(username)) {
       const floatingAvatar = createFloatingAvatar(
         username,
         index,
         uniqueCommenters.size
       );
       avatarSpace.appendChild(floatingAvatar);
-    });
+    }
+  });
+}
+
+async function init() {
+  try {
+    const projectId = await getProject();
+    const avatarSpace = document.getElementById('avatar-space');
+    
+    // Initial load
+    await updateCommenters(projectId, avatarSpace);
+    
+    // Poll for new comments every 3 seconds
+    setInterval(() => {
+      updateCommenters(projectId, avatarSpace);
+    }, 3000);
     
   } catch (error) {
     console.error('Error fetching comments:', error);
