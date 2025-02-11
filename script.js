@@ -1,5 +1,5 @@
 async function getCurrentProject() {
-  const project = await window.websim.getProject();
+  const project = await window.websim.getCurrentProject();
   return project.id;
 }
 
