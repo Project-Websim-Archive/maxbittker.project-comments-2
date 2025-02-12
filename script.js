@@ -33,8 +33,8 @@ function createAvatarElement(username, index) {
   avatar.alt = username;
   avatar.title = `@${username}`;
   
-  // Add animation delay based on index
-  avatar.style.animationDelay = `${index * 0.3}s`;
+  // Use negative animation delay based on index
+  avatar.style.animationDelay = `${index * -0.3}s`;
   
   const link = document.createElement('a');
   link.href = `https://websim.ai/@${username}`;

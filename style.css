@@ -43,7 +43,7 @@ body {
   cursor: pointer;
   transition: transform 0.3s ease;
   flex-shrink: 0;
-  animation: spin 10s linear infinite;
+  animation: spin 10s linear infinite backwards;
 }
 
 .floating-avatar:hover {
