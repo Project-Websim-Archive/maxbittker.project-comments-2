@@ -116,8 +116,8 @@ body {
 .bounce-arrow-left {
   position: fixed;
   top: 20px;
-  right: 20px;
-  transform: translateX(50%) rotate(270deg);
+  left: 20px;
+  transform: translateY(0) rotate(-90deg);
   animation: bounce 1s ease-in-out infinite;
   width: 30px;
   height: 30px;
@@ -134,9 +134,9 @@ body {
 
 @keyframes bounce {
   0%, 100% {
-    transform: translateX(50%) translateY(0);
+    transform: translateY(0);
   }
   50% {
-    transform: translateX(50%) translateY(-10px);
+    transform: translateY(-10px);
   }
 }
