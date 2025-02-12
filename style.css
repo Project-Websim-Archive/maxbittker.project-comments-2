@@ -103,11 +103,30 @@ body {
   transform: translateY(0);
 }
 
+.bounce-arrow {
+  position: fixed;
+  top: 20px;
+  right: 95px;
+  transform: translateX(50%);
+  animation: bounce 1s ease-in-out infinite;
+  width: 30px;
+  height: 30px;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateX(50%) translateY(0);
+  }
+  50% {
+    transform: translateX(50%) translateY(-10px);
   }
 }
